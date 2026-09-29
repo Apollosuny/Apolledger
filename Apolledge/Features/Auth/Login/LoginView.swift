@@ -135,5 +135,5 @@ struct LoginView: View {
 
 #Preview {
     LoginView()
-        .environment(AppSession(authService: MockAuthService(), sessionStore: InMemorySessionStore()))
+        .environment(AppContainer.preview().session)
 }

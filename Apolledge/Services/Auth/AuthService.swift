@@ -7,6 +7,8 @@ import Foundation
 
 protocol AuthService {
     func signIn(username: String, password: String) async throws -> AuthSession
+    /// Must throw `APIError.unauthorized` when the refresh token itself is rejected, so the session can be ended.
+    func refresh(refreshToken: String) async throws -> AuthTokens
 }
 
 enum AuthError: LocalizedError, Equatable {

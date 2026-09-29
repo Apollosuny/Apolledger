@@ -31,5 +31,5 @@ struct RootView: View {
 
 #Preview("Signed out") {
     RootView()
-        .environment(AppSession(authService: MockAuthService(), sessionStore: InMemorySessionStore()))
+        .environment(AppContainer.preview().session)
 }

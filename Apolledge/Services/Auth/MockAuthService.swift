@@ -19,7 +19,13 @@ struct MockAuthService: AuthService {
         return AuthSession(
             userID: UUID().uuidString,
             username: username,
-            accessToken: UUID().uuidString
+            accessToken: UUID().uuidString,
+            refreshToken: UUID().uuidString
         )
+    }
+
+    func refresh(refreshToken: String) async throws -> AuthTokens {
+        try await Task.sleep(for: latency)
+        return AuthTokens(accessToken: UUID().uuidString, refreshToken: UUID().uuidString)
     }
 }
