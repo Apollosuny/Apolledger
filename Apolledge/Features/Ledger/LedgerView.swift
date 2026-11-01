@@ -11,6 +11,7 @@ struct LedgerView: View {
     let revision: Int
     let onOpen: (LedgerItem) -> Void
     let onAdd: () -> Void
+    let onChanged: () -> Void
     let onSignOut: () -> Void
 
     @Environment(\.ledgerService) private var service
@@ -19,6 +20,7 @@ struct LedgerView: View {
     @State private var isSearching = false
     @State private var showsMonthPicker = false
     @State private var showsAccountActions = false
+    @State private var showsWalletBalance = false
     @FocusState private var isSearchFocused: Bool
 
     private struct LoadKey: Hashable {
@@ -52,6 +54,11 @@ struct LedgerView: View {
         .sheet(isPresented: $showsMonthPicker) {
             MonthPickerSheet(selection: $month)
                 .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showsWalletBalance) {
+            WalletBalanceSheet(wallets: viewModel.wallets, onSaved: onChanged)
+                .presentationDetents([.medium])
+                .presentationCornerRadius(AppRadius.sheet)
         }
         .confirmationDialog(username, isPresented: $showsAccountActions, titleVisibility: .visible) {
             Button("Đăng xuất", role: .destructive, action: onSignOut)
@@ -95,7 +102,60 @@ struct LedgerView: View {
             }
     }
 
+    @ViewBuilder
     private var overview: some View {
+        if let spendable = viewModel.spendable {
+            spendableOverview(spendable)
+        } else {
+            monthOverview
+        }
+    }
+
+    private func spendableOverview(_ spendable: SpendableToday) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            if spendable.needsWalletBalance {
+                Button { showsWalletBalance = true } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Nhập số dư ví")
+                            .font(AppTypography.screenTitle)
+                            .foregroundStyle(AppColors.ink)
+                        Text("Để biết hôm nay bạn dùng được bao nhiêu.")
+                            .font(AppTypography.subtitle)
+                            .foregroundStyle(AppColors.inkSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button { showsWalletBalance = true } label: {
+                    VStack(alignment: .leading, spacing: 9) {
+                        SectionLabel("Dùng được hôm nay")
+                        HeroAmount(
+                            amount: spendable.todayVnd,
+                            color: spendable.todayVnd < 0 ? AppColors.expense : AppColors.ink
+                        )
+                        Text(spendable.statusText)
+                            .font(AppTypography.subtitle)
+                            .foregroundStyle(AppColors.inkSecondary)
+                        Text(spendable.basisText)
+                            .font(AppTypography.figureSmall)
+                            .foregroundStyle(AppColors.inkTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Sửa số dư ví")
+            }
+        }
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .bottom) { Hairline(strong: true) }
+    }
+
+    private var monthOverview: some View {
         let remaining = viewModel.summary.remaining(budgetLimitVnd: viewModel.budgetLimitVnd)
         return VStack(alignment: .leading, spacing: 9) {
             SectionLabel(remaining.label)
@@ -207,5 +267,5 @@ private struct MonthPickerSheet: View {
 }
 
 #Preview {
-    LedgerView(username: "minh.tran", revision: 0, onOpen: { _ in }, onAdd: {}, onSignOut: {})
+    LedgerView(username: "minh.tran", revision: 0, onOpen: { _ in }, onAdd: {}, onChanged: {}, onSignOut: {})
 }

@@ -64,6 +64,7 @@ struct MainTabView: View {
                 revision: revision,
                 onOpen: { openedItem = $0 },
                 onAdd: { entryMode = .create },
+                onChanged: { revision += 1 },
                 onSignOut: onSignOut
             )
         case .budget:

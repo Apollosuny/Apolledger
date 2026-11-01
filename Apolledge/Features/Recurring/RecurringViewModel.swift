@@ -13,6 +13,7 @@ struct RecurringItem: Identifiable, Equatable {
     let meta: String
     /// Calendar day and month of the next run. Nil if the backend sent an unreadable date.
     let nextRun: (day: Int, month: Int)?
+    let nextRunDate: Date?
     let isDueSoon: Bool
     let isDue: Bool
 
@@ -47,6 +48,7 @@ struct RecurringItem: Identifiable, Equatable {
         guard parts.count == 3,
               let date = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else {
             nextRun = nil
+            nextRunDate = nil
             isDueSoon = false
             isDue = false
             return
@@ -54,6 +56,7 @@ struct RecurringItem: Identifiable, Equatable {
 
         let daysAway = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: date).day ?? 0
         nextRun = (parts[2], parts[1])
+        nextRunDate = date
         isDueSoon = !order.isPaused && daysAway <= 7
         isDue = !order.isPaused && daysAway <= 0
     }

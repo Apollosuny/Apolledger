@@ -21,6 +21,19 @@ struct RemoteLedgerService: LedgerService {
         ))
     }
 
+    func createAccount(type: AccountType, name: String, icon: String?) async throws -> Account {
+        try await client.send(Endpoint(
+            method: .post,
+            path: "accounts",
+            body: AccountRequest(type: type, name: name, icon: icon)
+        ))
+    }
+
+    func balance(accountID: String) async throws -> Int64 {
+        let response: BalanceResponse = try await client.send(Endpoint(method: .get, path: "accounts/\(accountID)/balance"))
+        return response.balanceVnd
+    }
+
     func transactions(in month: LedgerMonth) async throws -> [LedgerTransaction] {
         var transactions: [LedgerTransaction] = []
 
@@ -145,6 +158,16 @@ private struct TransactionRequest: Encodable {
             Entry(accountId: accounts.credit, direction: .credit, amountVnd: draft.amountVnd),
         ]
     }
+}
+
+private struct AccountRequest: Encodable {
+    let type: AccountType
+    let name: String
+    let icon: String?
+}
+
+private struct BalanceResponse: Decodable {
+    let balanceVnd: Int64
 }
 
 private struct BudgetRequest: Encodable {

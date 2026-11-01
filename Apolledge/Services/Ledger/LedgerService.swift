@@ -8,6 +8,8 @@ import SwiftUI
 protocol LedgerService {
     /// Includes archived accounts, because old transactions still need their names.
     func accounts() async throws -> [Account]
+    func createAccount(type: AccountType, name: String, icon: String?) async throws -> Account
+    func balance(accountID: String) async throws -> Int64
 
     /// Everything still on the books for the month: reversed transactions and their reversals are excluded.
     func transactions(in month: LedgerMonth) async throws -> [LedgerTransaction]

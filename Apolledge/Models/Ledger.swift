@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AccountType: String, Decodable {
+enum AccountType: String, Codable {
     case asset = "ASSET"
     case liability = "LIABILITY"
     case income = "INCOME"
@@ -15,7 +15,7 @@ enum AccountType: String, Decodable {
     case equity = "EQUITY"
 }
 
-/// A wallet (`asset`) or a category (`expense`, `income`).
+/// A wallet (`asset`), a category (`expense`, `income`), or the offset of balance corrections (`equity`).
 struct Account: Decodable, Identifiable, Hashable {
     let id: String
     let type: AccountType

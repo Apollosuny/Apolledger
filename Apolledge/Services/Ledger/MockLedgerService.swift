@@ -16,6 +16,14 @@ struct MockLedgerService: LedgerService {
         [Self.wallet, Self.food, Self.travel, Self.salary]
     }
 
+    func createAccount(type: AccountType, name: String, icon: String?) async throws -> Account {
+        Account(id: UUID().uuidString, type: type, name: name, icon: icon)
+    }
+
+    func balance(accountID: String) async throws -> Int64 {
+        12_400_000
+    }
+
     func transactions(in month: LedgerMonth) async throws -> [LedgerTransaction] {
         [
             Self.transaction(id: "1", note: "Cà phê sáng", debit: "food", credit: "wallet", amount: 45_000),

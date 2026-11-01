@@ -11,6 +11,7 @@ All main screens run against the real backend (`apolledge-be`). The backend is t
 | Design system, Splash, Login, Register | Done |
 | Auth session (Keychain, token refresh, sign-out) | Done, uses `RemoteAuthService` |
 | Sổ, transaction detail, entry sheet | Done |
+| "Dùng được hôm nay" and wallet balance correction | Done, computed on the client in `SpendableToday` |
 | Ngân sách, Báo cáo, Định kỳ | Done |
 | Forgot password, wallet creation, receipts, tags, editing a standing order | Not built |
 

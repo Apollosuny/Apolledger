@@ -18,7 +18,8 @@ struct LedgerItem: Identifiable, Hashable {
     var note: String? { transaction.note?.isEmpty == false ? transaction.note : nil }
     var title: String { note ?? category?.name ?? "Chuyển tiền" }
     var meta: String { [category?.name, wallet?.name].compactMap(\.self).joined(separator: " · ") }
-    var iconName: String { LedgerIcon.symbol(for: category?.icon) }
+    /// Transfers and balance corrections have no category to take an icon from.
+    var iconName: String { category.map { LedgerIcon.symbol(for: $0.icon) } ?? "arrow.left.arrow.right" }
 
     init(_ transaction: LedgerTransaction, accounts: [String: Account]) {
         let lines = transaction.entries.map { (entry: $0, account: accounts[$0.accountId]) }

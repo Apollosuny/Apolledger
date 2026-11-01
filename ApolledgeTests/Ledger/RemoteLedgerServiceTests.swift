@@ -73,6 +73,28 @@ struct RemoteLedgerServiceTests {
         #expect(entries[1]["direction"] as? String == "CREDIT")
     }
 
+    @Test func balanceReadsTheAccountsLedgerSum() async throws {
+        let transport = StubTransport { _ in (200, #"{"accountId":"cash","balanceVnd":-85000,"asOf":null}"#) }
+
+        let balance = try await makeService(transport).balance(accountID: "cash")
+
+        #expect(balance == -85_000)
+        #expect(transport.requests.first?.url?.path.hasSuffix("/accounts/cash/balance") == true)
+    }
+
+    @Test func createAccountSendsTheBackendTypeName() async throws {
+        let transport = StubTransport { _ in
+            (200, #"{"id":"e1","type":"EQUITY","name":"Số dư đầu kỳ","icon":null}"#)
+        }
+
+        let account = try await makeService(transport).createAccount(type: .equity, name: "Số dư đầu kỳ", icon: nil)
+
+        let body = try #require(transport.requests.first?.httpBody)
+        let json = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["type"] as? String == "EQUITY")
+        #expect(account.id == "e1")
+    }
+
     @Test func budgetPathsCarryTheMonth() async throws {
         let transport = StubTransport { _ in (204, "") }
 
