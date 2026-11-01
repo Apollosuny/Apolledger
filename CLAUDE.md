@@ -1,6 +1,6 @@
 # Apolledge
 
-iOS ledger app: SwiftUI, SwiftData, Swift Testing. See `README.md` for architecture and status.
+iOS ledger app: SwiftUI, Swift Testing, backed by the `apolledge-be` API. See `README.md` for architecture and status.
 
 ## Conventions
 

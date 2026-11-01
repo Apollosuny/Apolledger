@@ -21,4 +21,6 @@ enum AppSpacing {
 
     static let controlHeight: CGFloat = 50
     static let primaryButtonHeight: CGFloat = 52
+    static let tabBarHeight: CGFloat = 76
+    static let headerHeight: CGFloat = 44
 }

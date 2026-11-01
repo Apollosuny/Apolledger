@@ -12,11 +12,12 @@ struct AuthSession: Codable, Equatable {
     let refreshToken: String
 
     func replacingTokens(with tokens: AuthTokens) -> AuthSession {
-        AuthSession(userID: userID, username: username, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken)
+        AuthSession(userID: userID, username: username, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken ?? refreshToken)
     }
 }
 
 struct AuthTokens: Codable, Equatable {
     let accessToken: String
-    let refreshToken: String
+    /// Nil when the backend does not rotate refresh tokens: the current one stays valid.
+    let refreshToken: String?
 }

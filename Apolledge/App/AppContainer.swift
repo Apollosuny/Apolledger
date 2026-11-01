@@ -13,18 +13,22 @@ final class AppContainer {
     let preferences: Preferences
     let modelContainer: ModelContainer
     let session: AppSession
+    let ledgerService: LedgerService
 
     private init(
         environment: AppEnvironment,
         authService: AuthService,
+        ledgerService: ((APIClient) -> LedgerService)? = nil,
         sessionStore: SessionStore,
         preferences: Preferences,
         modelContainer: ModelContainer
     ) {
         let tokenManager = AuthTokenManager(store: sessionStore, authService: authService)
+        let apiClient = URLSessionAPIClient(baseURL: environment.apiBaseURL, tokenProvider: tokenManager)
 
         self.environment = environment
-        self.apiClient = URLSessionAPIClient(baseURL: environment.apiBaseURL, tokenProvider: tokenManager)
+        self.apiClient = apiClient
+        self.ledgerService = ledgerService?(apiClient) ?? MockLedgerService()
         self.preferences = preferences
         self.modelContainer = modelContainer
         self.session = AppSession(authService: authService, tokenManager: tokenManager)
@@ -43,9 +47,9 @@ final class AppContainer {
 
         return AppContainer(
             environment: environment,
-            // Once the backend is live: `RemoteAuthService(client: URLSessionAPIClient(baseURL: environment.apiBaseURL))`.
-            // It needs its own token-less client so a refresh never re-enters the token provider.
-            authService: MockAuthService(),
+            // Needs its own token-less client so a refresh never re-enters the token provider.
+            authService: RemoteAuthService(client: URLSessionAPIClient(baseURL: environment.apiBaseURL)),
+            ledgerService: { RemoteLedgerService(client: $0) },
             sessionStore: KeychainSessionStore(),
             preferences: Preferences(),
             modelContainer: modelContainer

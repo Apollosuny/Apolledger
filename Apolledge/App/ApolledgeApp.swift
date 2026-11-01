@@ -16,6 +16,7 @@ struct ApolledgeApp: App {
         WindowGroup {
             RootView()
                 .environment(container.session)
+                .environment(\.ledgerService, container.ledgerService)
                 .modelContainer(container.modelContainer)
         }
     }

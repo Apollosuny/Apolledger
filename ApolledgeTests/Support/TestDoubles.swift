@@ -30,6 +30,7 @@ final class StubAuthService: AuthService {
     private let result: Result<AuthTokens, Error>
     private(set) var refreshCount = 0
     private(set) var signInCount = 0
+    private(set) var signedOutTokens: [String] = []
 
     init(
         delay: Duration = .zero,
@@ -44,6 +45,14 @@ final class StubAuthService: AuthService {
     func signIn(username: String, password: String) async throws -> AuthSession {
         signInCount += 1
         return try signInResult.get()
+    }
+
+    func register(username: String, email: String, password: String) async throws -> AuthSession {
+        try signInResult.get()
+    }
+
+    func signOut(accessToken: String) async throws {
+        signedOutTokens.append(accessToken)
     }
 
     func refresh(refreshToken: String) async throws -> AuthTokens {

@@ -38,4 +38,26 @@ enum AppTypography {
     static let label = Font.custom("GeistMono-Regular", size: 10)
 
     static let amount = Font.custom("GeistMono-Medium", size: 14.5)
+
+    static let hero = Font.custom("Newsreader36pt-Light", size: 46)
+
+    static let heroSecondary = Font.custom("Newsreader36pt-Light", size: 40)
+
+    static let heroCurrency = Font.custom("Newsreader36pt-Light", size: 23)
+
+    static let screenTitle = Font.custom("Newsreader24pt-Regular", size: 24)
+
+    static let registerTitle = Font.custom("Newsreader36pt-Light", size: 32)
+
+    static let sheetTitle = Font.custom("Geist-SemiBold", size: 16)
+
+    static let tab = Font.custom("Geist-Medium", size: 9.5)
+
+    static let chip = Font.custom("Geist-Medium", size: 13)
+
+    static let figureSmall = Font.custom("GeistMono-Regular", size: 11)
+
+    static let figureMedium = Font.custom("GeistMono-Regular", size: 13)
+
+    static let figureEntry = Font.custom("GeistMono-Medium", size: 40)
 }

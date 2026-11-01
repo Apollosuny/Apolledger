@@ -139,7 +139,7 @@ final class URLSessionAPIClient: APIClient {
 }
 
 extension JSONEncoder {
-    /// Assumes a camelCase JSON contract with ISO-8601 dates; adjust here if the backend differs.
+    /// camelCase JSON with ISO-8601 dates.
     static var api: JSONEncoder {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -150,7 +150,31 @@ extension JSONEncoder {
 extension JSONDecoder {
     static var api: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            guard let date = Date(apiTimestamp: value) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid timestamp: \(value)")
+            }
+            return date
+        }
         return decoder
+    }
+}
+
+extension Date {
+    /// Parses a Java `Instant`. `JSONDecoder`'s built-in `.iso8601` rejects fractional seconds, which the backend
+    /// sends with a varying number of digits (none, 3 or 6).
+    init?(apiTimestamp value: String) {
+        guard let dot = value.firstIndex(of: "."), value.hasSuffix("Z") else {
+            guard let date = try? Date(value, strategy: .iso8601) else { return nil }
+            self = date
+            return
+        }
+
+        let fractionDigits = value[value.index(after: dot)..<value.index(before: value.endIndex)]
+        guard let base = try? Date(value[..<dot] + "Z", strategy: .iso8601),
+              let fraction = Double("0.\(fractionDigits)") else { return nil }
+        self = base.addingTimeInterval(fraction)
     }
 }

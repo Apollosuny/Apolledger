@@ -11,8 +11,8 @@ import Testing
 @MainActor
 struct RemoteAuthServiceTests {
     private let baseURL = URL(string: "https://example.test/v1")!
-    private let sessionJSON = #"{"userID":"u1","username":"minh","accessToken":"a1","refreshToken":"r1"}"#
-    private let tokensJSON = #"{"accessToken":"a2","refreshToken":"r2"}"#
+    private let sessionJSON = #"{"accessToken":"a1","refreshToken":"r1","user":{"id":"u1","username":"minh","email":"m@x.vn","provider":"local"}}"#
+    private let tokensJSON = #"{"accessToken":"a2"}"#
 
     private func makeService(_ transport: StubTransport) -> RemoteAuthService {
         RemoteAuthService(client: URLSessionAPIClient(baseURL: baseURL, transport: transport))
@@ -32,7 +32,7 @@ struct RemoteAuthServiceTests {
 
         let request = try #require(transport.requests.first)
         #expect(request.httpMethod == "POST")
-        #expect(request.url?.absoluteString == "https://example.test/v1/auth/login")
+        #expect(request.url?.absoluteString == "https://example.test/v1/auth/local")
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
         #expect(try jsonBody(of: request) == ["username": "minh", "password": "secret1"])
         #expect(session == AuthSession(userID: "u1", username: "minh", accessToken: "a1", refreshToken: "r1"))
@@ -64,7 +64,7 @@ struct RemoteAuthServiceTests {
     }
 
     @Test func signInRejectsResponseWithoutRefreshToken() async {
-        let transport = StubTransport { _ in (200, #"{"userID":"u1","username":"minh","accessToken":"a1"}"#) }
+        let transport = StubTransport { _ in (200, #"{"accessToken":"a1","user":{"id":"u1","username":"minh"}}"#) }
 
         await #expect {
             try await makeService(transport).signIn(username: "minh", password: "secret1")
@@ -72,6 +72,39 @@ struct RemoteAuthServiceTests {
             guard case APIError.decoding = error else { return false }
             return true
         }
+    }
+
+    // MARK: - register
+
+    @Test func registerPostsAccountDetails() async throws {
+        let transport = StubTransport { _ in (201, sessionJSON) }
+
+        let session = try await makeService(transport).register(username: "minh", email: "m@x.vn", password: "secret12")
+
+        let request = try #require(transport.requests.first)
+        #expect(request.url?.absoluteString == "https://example.test/v1/auth/local/register")
+        #expect(try jsonBody(of: request) == ["username": "minh", "email": "m@x.vn", "password": "secret12"])
+        #expect(session.userID == "u1")
+    }
+
+    @Test func registerMapsConflictToUsernameTaken() async {
+        let transport = StubTransport { _ in (409, #"{"code":"USERNAME_ALREADY_EXISTS","message":"taken"}"#) }
+
+        await #expect(throws: AuthError.usernameTaken) {
+            try await makeService(transport).register(username: "minh", email: "m@x.vn", password: "secret12")
+        }
+    }
+
+    // MARK: - signOut
+
+    @Test func signOutSendsTheSessionsAccessToken() async throws {
+        let transport = StubTransport { _ in (204, "") }
+
+        try await makeService(transport).signOut(accessToken: "a1")
+
+        let request = try #require(transport.requests.first)
+        #expect(request.url?.absoluteString == "https://example.test/v1/auth/logout")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer a1")
     }
 
     // MARK: - refresh
@@ -86,7 +119,7 @@ struct RemoteAuthServiceTests {
         #expect(request.url?.absoluteString == "https://example.test/v1/auth/refresh")
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
         #expect(try jsonBody(of: request) == ["refreshToken": "r1"])
-        #expect(tokens == AuthTokens(accessToken: "a2", refreshToken: "r2"))
+        #expect(tokens == AuthTokens(accessToken: "a2", refreshToken: nil))
     }
 
     @Test(arguments: [400, 401, 403])

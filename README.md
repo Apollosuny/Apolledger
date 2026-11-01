@@ -4,17 +4,15 @@ A personal ledger app for iOS, built with SwiftUI and SwiftData. UI copy is in V
 
 ## Status
 
-Early development. The foundation is in place; product features are not.
+All main screens run against the real backend (`apolledge-be`). The backend is the source of truth; SwiftData is not used for ledger data and can become an offline cache later.
 
 | Area | State |
 | --- | --- |
-| Design system (tokens, base components) | Done |
-| Splash, Login | Done |
-| Auth session (Keychain, token refresh) | Done, runs against `MockAuthService` |
-| Network, storage layers | Done, covered by unit tests |
-| Backend integration | Not wired: `RemoteAuthService` exists but `AppContainer.live()` still uses the mock |
-| Ledger tab ("Sổ") | Placeholder (shows the username and a sign-out button) |
-| Domain models (transactions, categories, …) | Not started: `PersistenceController.models` is empty |
+| Design system, Splash, Login, Register | Done |
+| Auth session (Keychain, token refresh, sign-out) | Done, uses `RemoteAuthService` |
+| Sổ, transaction detail, entry sheet | Done |
+| Ngân sách, Báo cáo, Định kỳ | Done |
+| Forgot password, wallet creation, receipts, tags, editing a standing order | Not built |
 
 ## Requirements
 
@@ -27,7 +25,15 @@ Early development. The foundation is in place; product features are not.
 1. Open `Apolledge.xcodeproj`.
 2. Select the `Apolledge` scheme and run.
 
-Until the backend is available, sign in with any username and a password of at least 6 characters (`MockAuthService`).
+The Debug build talks to a local backend. Start it from `../apolledge-be`:
+
+```sh
+cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties  # first run: fill in the secrets
+docker compose up -d postgres
+SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
+```
+
+Previews and tests use `MockLedgerService` and stubs, so they need no backend.
 
 ## Architecture
 
@@ -35,7 +41,7 @@ Until the backend is available, sign in with any username and a password of at l
 Apolledge/
 ├── App/            Entry point, composition root (AppContainer), AppEnvironment, AppSession, RootView
 ├── DesignSystem/   Tokens (colors, typography, spacing, radius, motion) and reusable components
-├── Features/       One folder per screen or flow: Splash, Auth/Login, Ledger
+├── Features/       One folder per screen or flow: Splash, Auth, Main, Ledger, Entry, Budget, Reports, Recurring
 ├── Models/         Plain data types shared across layers
 └── Services/
     ├── Auth/       AuthService (mock and remote), AuthTokenManager, SessionStore
@@ -57,19 +63,21 @@ Apolledge/
 
 | Build | Base URL |
 | --- | --- |
-| Debug | `https://api-dev.apolledge.app/v1` |
-| Release | `https://api.apolledge.app/v1` |
+| Debug | `http://localhost:8080/api/v1` |
+| Release | `https://api.apolledge.app/api/v1` |
 
-These URLs are placeholders in code; confirm them against the real backend before switching off the mock.
+The Release domain is still a placeholder. `localhost` only works on the simulator; a physical device needs the Mac's LAN address.
 
-The API contract currently assumed by the client:
+The API contract:
 
-- JSON in camelCase, ISO-8601 dates.
-- `POST auth/login` with `{ username, password }` returns `{ userID, username, accessToken, refreshToken }`.
-- `POST auth/refresh` with `{ refreshToken }` returns `{ accessToken, refreshToken }`. A 400, 401 or 403 means the refresh token was rejected.
-- Error bodies look like `{ "code": "...", "message": "..." }`, both fields optional.
+- JSON in camelCase, ISO-8601 dates with 0, 3 or 6 fractional digits.
+- `POST auth/local` and `POST auth/local/register` return `{ accessToken, refreshToken, user: { id, username, ... } }`. A 409 on register means the username is taken.
+- `POST auth/refresh` with `{ refreshToken }` returns `{ accessToken }`. A 400, 401 or 403 means the refresh token was rejected.
+- `POST auth/logout` revokes every token of the user, on all devices.
+- Error bodies look like `{ "code": "...", "message": "..." }`. Server messages are never shown to the user.
+- Ledger endpoints are listed in `RemoteLedgerService`. Account icons are Material Symbols names, mapped to SF Symbols in `LedgerIcon`.
 
-`RemoteAuthServiceTests` pins this contract. If the backend differs, change the code and those tests together.
+`RemoteAuthServiceTests` and `RemoteLedgerServiceTests` pin this contract. If the backend differs, change the code and those tests together.
 
 ## Testing
 
@@ -99,6 +107,6 @@ xcodebuild test \
 
 ## Roadmap
 
-1. Ledger tab: define the transaction and category models, register them in `PersistenceController.models`, and build the list screen.
-2. Connect the real backend: switch `AppContainer.live()` to `RemoteAuthService` and confirm the API contract.
+1. Choose the production domain and deploy the backend.
+2. Build the missing flows: forgot password (needs a backend endpoint), wallet creation, editing a standing order.
 3. Add tests for the keychain migration (sessions saved before refresh tokens existed) and for `AuthTokenManager` when the session changes mid-refresh.

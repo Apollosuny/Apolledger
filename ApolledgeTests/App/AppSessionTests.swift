@@ -115,6 +115,28 @@ struct AppSessionTests {
         #expect(tokenManager.session == nil)
     }
 
+    @Test func refreshKeepsStoredRefreshTokenWhenServerSendsNone() async throws {
+        let authService = StubAuthService(result: .success(AuthTokens(accessToken: "new", refreshToken: nil)))
+        let (session, tokenManager, store) = makeSession(store: InMemorySessionStore(session: stored), authService: authService)
+        await session.restore()
+
+        _ = try await tokenManager.refreshAccessToken(rejecting: "old")
+
+        #expect(store.load()?.accessToken == "new")
+        #expect(store.load()?.refreshToken == "r1")
+    }
+
+    // MARK: - register
+
+    @Test func registerPersistsAndSignsIn() async throws {
+        let (session, _, store) = makeSession()
+
+        try await session.register(username: "minh", email: "m@x.vn", password: "secret12")
+
+        #expect(session.phase == .signedIn(.fixture(accessToken: "old", refreshToken: "r1")))
+        #expect(store.load() != nil)
+    }
+
     // MARK: - session expiry
 
     @Test func rejectedRefreshTokenSignsOut() async {

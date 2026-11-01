@@ -52,8 +52,22 @@ final class AppSession {
         phase = .signedIn(session)
     }
 
+    func register(username: String, email: String, password: String) async throws {
+        let session = try await authService.register(username: username, email: email, password: password)
+        try tokenManager.update(session)
+        phase = .signedIn(session)
+    }
+
     func signOut() {
+        let accessToken = tokenManager.accessToken
         tokenManager.clear()
         phase = .signedOut
+
+        // Best effort: signing out must work offline. An unrevoked refresh token only matters if it was copied off the device.
+        if let accessToken {
+            Task { [authService] in
+                try? await authService.signOut(accessToken: accessToken)
+            }
+        }
     }
 }

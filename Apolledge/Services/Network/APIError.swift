@@ -31,8 +31,7 @@ enum APIError: LocalizedError, Equatable {
             "Không kết nối được máy chủ. Vui lòng thử lại."
         case .unauthorized:
             "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
-        case .server(_, _, let message?):
-            message
+        // Server messages are English and meant for developers, so they are never shown to the user.
         case .invalidURL, .server, .decoding:
             "Đã có lỗi xảy ra. Vui lòng thử lại."
         }
